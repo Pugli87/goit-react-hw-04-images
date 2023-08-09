@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import SearchBar from './searchBar/SearchBar';
 import ImageGallery from './imageGallery/ImageGallery';
@@ -10,34 +10,35 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const API_KEY = '37119471-67d3015a83a24c7694e1d7310';
 const IMAGES_PER_PAGE = 12;
-export default class ImageFilter extends Component {
-  state = {
-    query: '',
-    images: [],
-    loading: false,
-    modalImage: null,
-    currentPage: 1, // Nuevo contador para la página actual
-  };
 
-  handleSearch = async searchQuery => {
-    this.setState({ query: searchQuery, images: [], loading: true });
+const ImageFilter = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modalImage, setModalImage] = useState(null);
+  const [currentPage, setCurrentPAge] = useState(1); // Nuevo contador para la página actual
+
+  const handleSearch = async searchQuery => {
+    setQuery(searchQuery);
+    setImages([]);
+    setLoading(true);
 
     try {
       const response = await axios.get(
         `https://pixabay.com/api/?q=${searchQuery}&page=1&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=${IMAGES_PER_PAGE}`
       );
       Notify.success(`Hooray! We found ${response.data.totalHits} images.`);
-      this.setState({ images: response.data.hits, currentPage: 1 }); // Reseteamos la página actual a 1
+      setImages(response.data.hits);
+      setCurrentPAge(1); // Reseteamos la página actual a 1
     } catch (error) {
       console.error('Error fetching images:', error);
     } finally {
-      this.setState({ loading: false });
+      setLoading(false);
     }
   };
 
-  handleLoadMore = async () => {
-    const { query, currentPage } = this.state;
-    this.setState({ loading: true });
+  const handleLoadMore = async () => {
+    setLoading(true);
 
     try {
       const nextPage = currentPage + 1; // Incrementamos el contador de página en 1
@@ -46,55 +47,51 @@ export default class ImageFilter extends Component {
       );
 
       if (response.data.hits.length > 0) {
-        this.setState(prevState => ({
-          images: [...prevState.images, ...response.data.hits],
-          currentPage: nextPage, // Actualizamos la página actual en el estado
-        }));
+        setImages(prevImages => [...prevImages.images, ...response.data.hits]);
+        setCurrentPAge(nextPage); // Actualizamos la página actual en el estado
       } else {
-        alert('No more images to load.');
+        Notify.warning('No more images to load.');
       }
     } catch (error) {
       console.error('Error fetching images:', error);
     } finally {
-      this.setState({ loading: false });
+      setLoading(false);
     }
   };
 
-  handleImageClick = imageUrl => {
-    this.setState({ modalImage: imageUrl });
+  const handleImageClick = imageUrl => {
+    setModalImage(imageUrl);
   };
 
-  handleCloseModal = () => {
-    this.setState({ modalImage: null });
+  const handleCloseModal = () => {
+    setModalImage(null);
   };
 
-  render() {
-    const { images, loading, modalImage } = this.state;
-
-    return (
-      <>
-        <SearchBar onSubmit={this.handleSearch} />
-        <ImageGallery>
-          {images.map(image => (
-            <ImageGalleryItem
-              key={image.id}
-              imageUrl={image.webformatURL}
-              alt={image.tags}
-              onClick={() => this.handleImageClick(image.largeImageURL)}
-            />
-          ))}
-        </ImageGallery>
-        {loading && <Loader />}
-        {images.length !== 0 && <Button onClick={this.handleLoadMore} />}
-
-        {modalImage && (
-          <Modal
-            imageUrl={modalImage}
-            alt="Modal Image"
-            onClose={this.handleCloseModal}
+  return (
+    <>
+      <SearchBar onSubmit={handleSearch} />
+      <ImageGallery>
+        {images.map(image => (
+          <ImageGalleryItem
+            key={image.id}
+            imageUrl={image.webformatURL}
+            alt={image.tags}
+            onClick={() => handleImageClick(image.largeImageURL)}
           />
-        )}
-      </>
-    );
-  }
-}
+        ))}
+      </ImageGallery>
+      {loading && <Loader />}
+      {images.length !== 0 && <Button onClick={handleLoadMore} />}
+
+      {modalImage && (
+        <Modal
+          imageUrl={modalImage}
+          alt="Modal Image"
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
+  );
+};
+
+export default ImageFilter;
