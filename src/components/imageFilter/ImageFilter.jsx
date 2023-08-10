@@ -39,16 +39,16 @@ const ImageFilter = () => {
 
   const handleLoadMore = async () => {
     setLoading(true);
-
+  
     try {
-      const nextPage = currentPage + 1; // Incrementamos el contador de página en 1
+      const nextPage = currentPage + 1;
       const response = await axios.get(
         `https://pixabay.com/api/?q=${query}&page=${nextPage}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=${IMAGES_PER_PAGE}`
       );
-
+  
       if (response.data.hits.length > 0) {
-        setImages(prevImages => [...prevImages.images, ...response.data.hits]);
-        setCurrentPAge(nextPage); // Actualizamos la página actual en el estado
+        setImages(prevImages => [...prevImages, ...response.data.hits]); // Corregido aquí
+        setCurrentPAge(nextPage);
       } else {
         Notify.warning('No more images to load.');
       }
@@ -58,6 +58,7 @@ const ImageFilter = () => {
       setLoading(false);
     }
   };
+  
 
   const handleImageClick = imageUrl => {
     setModalImage(imageUrl);
