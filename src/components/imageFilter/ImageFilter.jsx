@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+//import axios from 'axios';
 import SearchBar from './searchBar/SearchBar';
 import ImageGallery from './imageGallery/ImageGallery';
 import ImageGalleryItem from './imageGalleryItem/ImageGalleryItem';
@@ -7,9 +7,10 @@ import Button from './button/Button';
 import Loader from './loader/Loader';
 import Modal from './modal/Modal';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { fetchArticlesWithQuery } from '../../api/Api';
 
-const API_KEY = '37119471-67d3015a83a24c7694e1d7310';
-const IMAGES_PER_PAGE = 12;
+//const API_KEY = '37119471-67d3015a83a24c7694e1d7310';
+//const IMAGES_PER_PAGE = 12;
 
 const ImageFilter = () => {
   const [query, setQuery] = useState('');
@@ -23,40 +24,28 @@ const ImageFilter = () => {
     setImages([]);
     setLoading(true);
 
-    try {
-      const response = await axios.get(
-        `https://pixabay.com/api/?q=${searchQuery}&page=1&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=${IMAGES_PER_PAGE}`
-      );
-      Notify.success(`Hooray! We found ${response.data.totalHits} images.`);
-      setImages(response.data.hits);
+    const data = await fetchArticlesWithQuery(searchQuery, 1);
+
+      Notify.success(`Hooray! We found ${data.totalHits} images.`);
+      setImages(data.hits);
       setCurrentPAge(1); // Reseteamos la página actual a 1
-    } catch (error) {
-      console.error('Error fetching images:', error);
-    } finally {
+
       setLoading(false);
-    }
   };
 
   const handleLoadMore = async () => {
     setLoading(true);
   
-    try {
       const nextPage = currentPage + 1;
-      const response = await axios.get(
-        `https://pixabay.com/api/?q=${query}&page=${nextPage}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=${IMAGES_PER_PAGE}`
-      );
-  
-      if (response.data.hits.length > 0) {
-        setImages(prevImages => [...prevImages, ...response.data.hits]); // Corregido aquí
+      const data = await fetchArticlesWithQuery(query,nextPage)
+      if (data.hits.length > 0) {
+        setImages(prevImages => [...prevImages, ...data.hits]); // Corregido aquí
         setCurrentPAge(nextPage);
       } else {
         Notify.warning('No more images to load.');
       }
-    } catch (error) {
-      console.error('Error fetching images:', error);
-    } finally {
+    
       setLoading(false);
-    }
   };
   
 
@@ -82,7 +71,7 @@ const ImageFilter = () => {
         ))}
       </ImageGallery>
       {loading && <Loader />}
-      {images.length !== 0 && <Button onClick={handleLoadMore} />}
+      {images.length !== 0 && <Button onClick={handleLoadMore} id="load-more"/>}
 
       {modalImage && (
         <Modal
